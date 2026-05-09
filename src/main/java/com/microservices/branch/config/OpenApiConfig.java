@@ -1,15 +1,14 @@
-package com.microservices.order.config;
+package com.microservices.branch.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import io.swagger.v3.oas.models.security.SecurityScheme;
 
 import java.util.List;
 
@@ -17,45 +16,29 @@ import java.util.List;
 public class OpenApiConfig {
 
     @Bean
-    public OpenAPI orderServiceOpenAPI() {
+    public OpenAPI branchServiceOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("FoodChain — Order Service API")
-                        .description("Handles order placement, status updates, " +
-                                "and the full order lifecycle")
+                        .title("FoodChain — Branch Service API")
+                        .description("Manage restaurant branches, operating hours, and geolocation search.")
                         .version("v1.0.0")
                         .contact(new Contact()
                                 .name("FoodchainGroup08")
-                                .email("team@foodchain.com"))
-                        .license(new License()
-                                .name("Capstone Project 2026")))
+                                .email("team@foodchain.com")))
                 .servers(List.of(
                         new Server()
                                 .url("http://localhost:8080/api")
-                                .description("API Gateway (use this for all requests)"),
+                                .description("API Gateway"),
                         new Server()
-                                .url("http://localhost:8083")
-                                .description("Order Service direct")
-                ));
-    }
-
-    @Bean
-    public OpenAPI openAPI() {
-        return new OpenAPI()
-                .info(new Info()
-                        .title("FoodChain — Order Service API")
-                        .version("v1.0.0"))
-
-                // adds Authorize button to Swagger UI
-                .addSecurityItem(new SecurityRequirement()
-                        .addList("Bearer Authentication"))
+                                .url("http://localhost:8081/api")
+                                .description("Branch Service direct (local dev)")))
+                .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
                 .components(new Components()
                         .addSecuritySchemes("Bearer Authentication",
                                 new SecurityScheme()
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
-                                        .description("Paste your JWT token here. " +
-                                                "Get it from POST /api/auth/login")));
+                                        .description("Paste your JWT token. Get it from POST /api/auth/login")));
     }
 }
