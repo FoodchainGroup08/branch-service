@@ -7,6 +7,7 @@
 /Users/ubaydah/Desktop/branch-service/src/main/java/com/microservices/branch/exception/ResourceNotFoundException.java
 /Users/ubaydah/Desktop/branch-service/src/main/java/com/microservices/branch/service/BranchService.java
 /Users/ubaydah/Desktop/branch-service/src/main/java/com/microservices/branch/entity/Branch.java
+/Users/ubaydah/Desktop/branch-service/src/main/java/com/microservices/branch/security/GatewayRoleHelper.java
 /Users/ubaydah/Desktop/branch-service/src/main/java/com/microservices/branch/entity/BranchHours.java
 /Users/ubaydah/Desktop/branch-service/src/main/java/com/microservices/branch/BranchServiceApplication.java
 /Users/ubaydah/Desktop/branch-service/src/main/java/com/microservices/branch/repository/BranchHoursRepository.java
