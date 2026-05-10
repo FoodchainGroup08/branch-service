@@ -370,4 +370,90 @@ class BranchControllerIntegrationTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].name").value("Nearby"));
     }
+
+    // ── Validation: POST /branches ─────────────────────────────────────────────
+
+    @Test
+    void createBranch_returns400_whenNameIsBlank() throws Exception {
+        BranchDtos.CreateBranchRequest req = new BranchDtos.CreateBranchRequest(
+                "", "10 New St", "555-0002", "desc", "mgr-2", null, null);
+
+        mockMvc.perform(post("/branches")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req))
+                        .header("X-User-Id", "admin-1")
+                        .header("X-User-Role", "OFFICE_ADMIN"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void createBranch_returns400_whenAddressIsBlank() throws Exception {
+        BranchDtos.CreateBranchRequest req = new BranchDtos.CreateBranchRequest(
+                "Valid Name", "   ", "555-0002", "desc", "mgr-2", null, null);
+
+        mockMvc.perform(post("/branches")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req))
+                        .header("X-User-Id", "admin-1")
+                        .header("X-User-Role", "OFFICE_ADMIN"))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ── Error shape: GET /branches/{id} ───────────────────────────────────────
+
+    @Test
+    void getBranch_returns404_whenBranchNotFound() throws Exception {
+        mockMvc.perform(get("/branches/no-such-branch"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.path").isString())
+                .andExpect(jsonPath("$.message").isString());
+    }
+
+    // ── Error shape: PUT /branches/{id} ───────────────────────────────────────
+
+    @Test
+    void updateBranch_returns404_whenBranchNotFound() throws Exception {
+        BranchDtos.UpdateBranchRequest req = new BranchDtos.UpdateBranchRequest(
+                "New Name", null, null, null, null, null, null);
+
+        mockMvc.perform(put("/branches/no-such-branch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req))
+                        .header("X-User-Id", "admin-1")
+                        .header("X-User-Role", "OFFICE_ADMIN"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.path").isString())
+                .andExpect(jsonPath("$.message").isString());
+    }
+
+    // ── Validation: PUT /branches/{id}/hours ──────────────────────────────────
+
+    @Test
+    void setHours_returns400_forInvalidTimeFormat() throws Exception {
+        Branch b = persistBranch();
+        List<BranchDtos.BranchHoursRequest> hours = List.of(
+                new BranchDtos.BranchHoursRequest(0, "99:99", "bad-time", false));
+
+        mockMvc.perform(put("/branches/" + b.getId() + "/hours")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(hours))
+                        .header("X-User-Id", "admin-1")
+                        .header("X-User-Role", "OFFICE_ADMIN"))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ── Validation: GET /branches/nearby ──────────────────────────────────────
+
+    @Test
+    void nearbySearch_returns400_forNegativeRadius() throws Exception {
+        mockMvc.perform(get("/branches/nearby")
+                        .param("lat", "51.5")
+                        .param("lng", "-0.12")
+                        .param("radiusKm", "-5.0"))
+                .andExpect(status().isBadRequest());
+    }
 }

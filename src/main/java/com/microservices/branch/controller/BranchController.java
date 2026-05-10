@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -15,12 +17,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 @Slf4j
+@Validated
 @RestController
 @RequestMapping("/v1/branches")
 @Tag(name = "Branches", description = "Manage restaurant branch locations, operating hours, and active status. Read operations are public; write operations require OFFICE_ADMIN role.")
@@ -44,6 +48,7 @@ public class BranchController {
             @Parameter(description = "Longitude of the customer's location (decimal degrees)", required = true, example = "46.6753")
             @RequestParam double lng,
             @Parameter(description = "Search radius in kilometres (default 10 km)", example = "5.0")
+            @Positive(message = "radiusKm must be positive")
             @RequestParam(defaultValue = "10.0") double radiusKm) {
         return ResponseEntity.ok(branchService.findNearby(lat, lng, radiusKm));
     }
@@ -60,9 +65,9 @@ public class BranchController {
     })
     @PostMapping
     public ResponseEntity<BranchDtos.BranchResponse> createBranch(
-            @RequestBody BranchDtos.CreateBranchRequest request,
-            @Parameter(hidden = true) @RequestHeader("X-User-Id")   String userId,
-            @Parameter(hidden = true) @RequestHeader("X-User-Role") String userRole) {
+            @Valid @RequestBody BranchDtos.CreateBranchRequest request,
+            @Parameter(description = "Caller's user UUID — injected by the API Gateway from the JWT. When testing directly on Swagger, paste your user UUID here.", example = "00000000-0000-0000-0000-000000000001") @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @Parameter(description = "Caller's role — injected by the API Gateway from the JWT. When testing directly on Swagger, enter HEAD_OFFICE_ADMIN for admin access.", example = "HEAD_OFFICE_ADMIN") @RequestHeader(value = "X-User-Role", required = false) String userRole) {
         log.info("POST /branches userId={} role={}", userId, userRole);
         assertAdmin(userRole);
         return ResponseEntity.status(HttpStatus.CREATED).body(branchService.createBranch(request));
@@ -119,9 +124,9 @@ public class BranchController {
     public ResponseEntity<BranchDtos.BranchResponse> updateBranch(
             @Parameter(description = "UUID of the branch to update", required = true)
             @PathVariable String id,
-            @RequestBody  BranchDtos.UpdateBranchRequest request,
-            @Parameter(hidden = true) @RequestHeader("X-User-Id")   String userId,
-            @Parameter(hidden = true) @RequestHeader("X-User-Role") String userRole) {
+            @Valid @RequestBody BranchDtos.UpdateBranchRequest request,
+            @Parameter(description = "Caller's user UUID — injected by the API Gateway from the JWT. When testing directly on Swagger, paste your user UUID here.", example = "00000000-0000-0000-0000-000000000001") @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @Parameter(description = "Caller's role — injected by the API Gateway from the JWT. When testing directly on Swagger, enter HEAD_OFFICE_ADMIN for admin access.", example = "HEAD_OFFICE_ADMIN") @RequestHeader(value = "X-User-Role", required = false) String userRole) {
         log.info("PUT /branches/{} userId={} role={}", id, userId, userRole);
         return ResponseEntity.ok(branchService.updateBranch(id, request, userId, userRole));
     }
@@ -141,7 +146,7 @@ public class BranchController {
     public ResponseEntity<BranchDtos.BranchResponse> activate(
             @Parameter(description = "UUID of the branch", required = true)
             @PathVariable String id,
-            @Parameter(hidden = true) @RequestHeader("X-User-Role") String userRole) {
+            @Parameter(description = "Caller's role — injected by the API Gateway from the JWT. When testing directly on Swagger, enter HEAD_OFFICE_ADMIN for admin access.", example = "HEAD_OFFICE_ADMIN") @RequestHeader(value = "X-User-Role", required = false) String userRole) {
         assertAdmin(userRole);
         return ResponseEntity.ok(branchService.setActive(id, true));
     }
@@ -161,7 +166,7 @@ public class BranchController {
     public ResponseEntity<BranchDtos.BranchResponse> deactivate(
             @Parameter(description = "UUID of the branch", required = true)
             @PathVariable String id,
-            @Parameter(hidden = true) @RequestHeader("X-User-Role") String userRole) {
+            @Parameter(description = "Caller's role — injected by the API Gateway from the JWT. When testing directly on Swagger, enter HEAD_OFFICE_ADMIN for admin access.", example = "HEAD_OFFICE_ADMIN") @RequestHeader(value = "X-User-Role", required = false) String userRole) {
         assertAdmin(userRole);
         return ResponseEntity.ok(branchService.setActive(id, false));
     }
@@ -197,9 +202,9 @@ public class BranchController {
     public ResponseEntity<List<BranchDtos.BranchHoursResponse>> setHours(
             @Parameter(description = "UUID of the branch", required = true)
             @PathVariable String id,
-            @RequestBody  List<BranchDtos.BranchHoursRequest> hours,
-            @Parameter(hidden = true) @RequestHeader("X-User-Id")   String userId,
-            @Parameter(hidden = true) @RequestHeader("X-User-Role") String userRole) {
+            @Valid @RequestBody List<BranchDtos.BranchHoursRequest> hours,
+            @Parameter(description = "Caller's user UUID — injected by the API Gateway from the JWT. When testing directly on Swagger, paste your user UUID here.", example = "00000000-0000-0000-0000-000000000001") @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @Parameter(description = "Caller's role — injected by the API Gateway from the JWT. When testing directly on Swagger, enter HEAD_OFFICE_ADMIN for admin access.", example = "HEAD_OFFICE_ADMIN") @RequestHeader(value = "X-User-Role", required = false) String userRole) {
         log.info("PUT /branches/{}/hours userId={} role={}", id, userId, userRole);
         return ResponseEntity.ok(branchService.setHours(id, hours, userId, userRole));
     }
@@ -219,8 +224,8 @@ public class BranchController {
     public ResponseEntity<Void> deleteBranch(
             @Parameter(description = "UUID of the branch to delete", required = true)
             @PathVariable String id,
-            @Parameter(hidden = true) @RequestHeader("X-User-Id")   String userId,
-            @Parameter(hidden = true) @RequestHeader("X-User-Role") String userRole) {
+            @Parameter(description = "Caller's user UUID — injected by the API Gateway from the JWT. When testing directly on Swagger, paste your user UUID here.", example = "00000000-0000-0000-0000-000000000001") @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @Parameter(description = "Caller's role — injected by the API Gateway from the JWT. When testing directly on Swagger, enter HEAD_OFFICE_ADMIN for admin access.", example = "HEAD_OFFICE_ADMIN") @RequestHeader(value = "X-User-Role", required = false) String userRole) {
         log.info("DELETE /branches/{} userId={} role={}", id, userId, userRole);
         assertAdmin(userRole);
         branchService.deleteBranch(id, userId, userRole);
@@ -243,7 +248,7 @@ public class BranchController {
             @Parameter(description = "UUID of the branch", required = true)
             @PathVariable String id,
             @RequestBody BranchDtos.UpdateBranchStatusRequest request,
-            @Parameter(hidden = true) @RequestHeader("X-User-Role") String userRole) {
+            @Parameter(description = "Caller's role — injected by the API Gateway from the JWT. When testing directly on Swagger, enter HEAD_OFFICE_ADMIN for admin access.", example = "HEAD_OFFICE_ADMIN") @RequestHeader(value = "X-User-Role", required = false) String userRole) {
         assertAdmin(userRole);
         return ResponseEntity.ok(branchService.setActive(id, request.isActive()));
     }
@@ -251,6 +256,10 @@ public class BranchController {
     // ── Helper ────────────────────────────────────────────────────────────────
 
     private void assertAdmin(String userRole) {
+        if (userRole == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "Authentication required — add X-User-Role header (value: HEAD_OFFICE_ADMIN)");
+        }
         if (!"HEAD_OFFICE_ADMIN".equals(userRole) && !"Admin".equals(userRole) && !"OFFICE_ADMIN".equals(userRole)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
         }

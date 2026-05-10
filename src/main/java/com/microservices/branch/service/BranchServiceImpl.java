@@ -3,6 +3,7 @@ package com.microservices.branch.service;
 import com.microservices.branch.dto.BranchDtos;
 import com.microservices.branch.entity.Branch;
 import com.microservices.branch.entity.BranchHours;
+import com.microservices.branch.exception.ResourceNotFoundException;
 import com.microservices.branch.repository.BranchHoursRepository;
 import com.microservices.branch.repository.BranchRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -128,7 +129,7 @@ public class BranchServiceImpl implements BranchService {
             }
             return BranchHours.builder()
                     .branch(branch)
-                    .dayOfWeek(req.dayOfWeek())
+                    .dayOfWeek(req.dayOfWeek().getValue() - 1) // MONDAY=1 → 0, SUNDAY=7 → 6
                     .openTime(openTime)
                     .closeTime(closeTime)
                     .closed(req.closed())
@@ -144,8 +145,8 @@ public class BranchServiceImpl implements BranchService {
     @Transactional
     public void deleteBranch(String id, String requesterId, String requesterRole) {
         Branch branch = findOrThrow(id);
-        if (!"OFFICE_ADMIN".equals(requesterRole)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only OFFICE_ADMIN can delete branches");
+        if (!"OFFICE_ADMIN".equals(requesterRole) && !"HEAD_OFFICE_ADMIN".equals(requesterRole)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can delete branches");
         }
         branchRepository.delete(branch);
         log.info("Branch {} deleted by {}", id, requesterId);
@@ -176,11 +177,11 @@ public class BranchServiceImpl implements BranchService {
 
     private Branch findOrThrow(String id) {
         return branchRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Branch not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + id));
     }
 
     private void assertCanManage(Branch branch, String requesterId, String requesterRole) {
-        boolean isAdmin      = "OFFICE_ADMIN".equals(requesterRole);
+        boolean isAdmin = "OFFICE_ADMIN".equals(requesterRole) || "HEAD_OFFICE_ADMIN".equals(requesterRole);
         boolean isOwnManager = "BRANCH_MANAGER".equals(requesterRole)
                 && requesterId != null
                 && requesterId.equals(branch.getManagerId());

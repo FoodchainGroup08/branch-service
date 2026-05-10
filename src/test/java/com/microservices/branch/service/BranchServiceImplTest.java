@@ -3,6 +3,7 @@ package com.microservices.branch.service;
 import com.microservices.branch.dto.BranchDtos;
 import com.microservices.branch.entity.Branch;
 import com.microservices.branch.entity.BranchHours;
+import com.microservices.branch.exception.ResourceNotFoundException;
 import com.microservices.branch.repository.BranchHoursRepository;
 import com.microservices.branch.repository.BranchRepository;
 import org.junit.jupiter.api.Test;
@@ -115,8 +116,16 @@ class BranchServiceImplTest {
         when(branchRepository.findById("bad")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.getBranch("bad"))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(404));
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void getBranch_throws_ResourceNotFoundException_forUnknownId() {
+        when(branchRepository.findById("unknown-id")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getBranch("unknown-id"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("unknown-id");
     }
 
     // ── updateBranch ──────────────────────────────────────────────────────────
@@ -159,6 +168,18 @@ class BranchServiceImplTest {
         assertThatThrownBy(() -> service.updateBranch("id-1", req, "other-mgr", "BRANCH_MANAGER"))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(403));
+    }
+
+    @Test
+    void updateBranch_throws_ResourceNotFoundException_whenBranchNotFound() {
+        when(branchRepository.findById("missing")).thenReturn(Optional.empty());
+
+        BranchDtos.UpdateBranchRequest req = new BranchDtos.UpdateBranchRequest(
+                "New Name", null, null, null, null, null, null);
+
+        assertThatThrownBy(() -> service.updateBranch("missing", req, "admin-1", "OFFICE_ADMIN"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("missing");
     }
 
     @Test
@@ -220,8 +241,7 @@ class BranchServiceImplTest {
         when(branchRepository.findById("bad")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.getHours("bad"))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(404));
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     // ── setHours ──────────────────────────────────────────────────────────────
@@ -273,6 +293,33 @@ class BranchServiceImplTest {
                 .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(400));
     }
 
+    @Test
+    void setHours_throws_IllegalArgumentException_forInvalidTimeFormat() {
+        Branch b = branch("id-1", true);
+        when(branchRepository.findById("id-1")).thenReturn(Optional.of(b));
+
+        // "25:00" is not a valid LocalTime — service throws ResponseStatusException(BAD_REQUEST)
+        List<BranchDtos.BranchHoursRequest> req = List.of(
+                new BranchDtos.BranchHoursRequest(0, "25:00", "17:00", false));
+
+        assertThatThrownBy(() -> service.setHours("id-1", req, "admin-1", "OFFICE_ADMIN"))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(400));
+    }
+
+    @Test
+    void setHours_throws_IllegalArgumentException_forAbcTimeFormat() {
+        Branch b = branch("id-1", true);
+        when(branchRepository.findById("id-1")).thenReturn(Optional.of(b));
+
+        List<BranchDtos.BranchHoursRequest> req = List.of(
+                new BranchDtos.BranchHoursRequest(2, "abc", "xyz", false));
+
+        assertThatThrownBy(() -> service.setHours("id-1", req, "admin-1", "OFFICE_ADMIN"))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(400));
+    }
+
     // ── deleteBranch ──────────────────────────────────────────────────────────
 
     @Test
@@ -300,8 +347,16 @@ class BranchServiceImplTest {
         when(branchRepository.findById("bad")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.deleteBranch("bad", "admin-1", "OFFICE_ADMIN"))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(404));
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void deleteBranch_throws_ResourceNotFoundException_whenBranchNotFound() {
+        when(branchRepository.findById("ghost-id")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.deleteBranch("ghost-id", "admin-1", "OFFICE_ADMIN"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("ghost-id");
     }
 
     // ── findNearby ────────────────────────────────────────────────────────────
