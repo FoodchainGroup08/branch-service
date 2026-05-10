@@ -54,7 +54,7 @@ class BranchControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req))
                         .header("X-User-Id", "admin-1")
-                        .header("X-User-Role", "OFFICE_ADMIN"))
+                        .header("X-User-Role", "HEAD_OFFICE_ADMIN"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", notNullValue()))
                 .andExpect(jsonPath("$.name").value("New Branch"))
@@ -140,7 +140,7 @@ class BranchControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req))
                         .header("X-User-Id", "admin-1")
-                        .header("X-User-Role", "OFFICE_ADMIN"))
+                        .header("X-User-Role", "HEAD_OFFICE_ADMIN"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Updated Name"))
                 .andExpect(jsonPath("$.latitude").value(40.71));
@@ -183,7 +183,7 @@ class BranchControllerIntegrationTest {
 
         mockMvc.perform(delete("/branches/" + b.getId())
                         .header("X-User-Id", "admin-1")
-                        .header("X-User-Role", "OFFICE_ADMIN"))
+                        .header("X-User-Role", "HEAD_OFFICE_ADMIN"))
                 .andExpect(status().isNoContent());
 
         assertThat(branchRepository.findById(b.getId())).isEmpty();
@@ -203,7 +203,7 @@ class BranchControllerIntegrationTest {
     void deleteBranch_notFound_returns404() throws Exception {
         mockMvc.perform(delete("/branches/nonexistent")
                         .header("X-User-Id", "admin-1")
-                        .header("X-User-Role", "OFFICE_ADMIN"))
+                        .header("X-User-Role", "HEAD_OFFICE_ADMIN"))
                 .andExpect(status().isNotFound());
     }
 
@@ -214,7 +214,7 @@ class BranchControllerIntegrationTest {
         Branch b = persistBranch(); // active = false by default
 
         mockMvc.perform(patch("/branches/" + b.getId() + "/activate")
-                        .header("X-User-Role", "OFFICE_ADMIN"))
+                        .header("X-User-Role", "HEAD_OFFICE_ADMIN"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.active").value(true));
     }
@@ -236,7 +236,7 @@ class BranchControllerIntegrationTest {
                 .name("Active Branch").address("A").active(true).managerId("mgr-1").build());
 
         mockMvc.perform(patch("/branches/" + b.getId() + "/deactivate")
-                        .header("X-User-Role", "OFFICE_ADMIN"))
+                        .header("X-User-Role", "HEAD_OFFICE_ADMIN"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.active").value(false));
     }
@@ -272,7 +272,7 @@ class BranchControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(hours))
                         .header("X-User-Id", "admin-1")
-                        .header("X-User-Role", "OFFICE_ADMIN"))
+                        .header("X-User-Role", "HEAD_OFFICE_ADMIN"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(3)))
                 .andExpect(jsonPath("$[0].dayName").value("Monday"))
@@ -290,7 +290,7 @@ class BranchControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(hours))
                         .header("X-User-Id", "admin-1")
-                        .header("X-User-Role", "OFFICE_ADMIN"))
+                        .header("X-User-Role", "HEAD_OFFICE_ADMIN"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -306,14 +306,14 @@ class BranchControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(initial))
                         .header("X-User-Id", "admin-1")
-                        .header("X-User-Role", "OFFICE_ADMIN"))
+                        .header("X-User-Role", "HEAD_OFFICE_ADMIN"))
                 .andExpect(status().isOk());
 
         mockMvc.perform(put("/branches/" + b.getId() + "/hours")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updated))
                         .header("X-User-Id", "admin-1")
-                        .header("X-User-Role", "OFFICE_ADMIN"))
+                        .header("X-User-Role", "HEAD_OFFICE_ADMIN"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].openTime").value("10:00"));

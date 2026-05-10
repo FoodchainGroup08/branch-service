@@ -144,8 +144,8 @@ public class BranchServiceImpl implements BranchService {
     @Transactional
     public void deleteBranch(String id, String requesterId, String requesterRole) {
         Branch branch = findOrThrow(id);
-        if (!"OFFICE_ADMIN".equals(requesterRole)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only OFFICE_ADMIN can delete branches");
+        if (!"HEAD_OFFICE_ADMIN".equals(requesterRole)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HEAD_OFFICE_ADMIN can delete branches");
         }
         branchRepository.delete(branch);
         log.info("Branch {} deleted by {}", id, requesterId);
@@ -180,7 +180,7 @@ public class BranchServiceImpl implements BranchService {
     }
 
     private void assertCanManage(Branch branch, String requesterId, String requesterRole) {
-        boolean isAdmin      = "OFFICE_ADMIN".equals(requesterRole);
+        boolean isAdmin      = "HEAD_OFFICE_ADMIN".equals(requesterRole);
         boolean isOwnManager = "BRANCH_MANAGER".equals(requesterRole)
                 && requesterId != null
                 && requesterId.equals(branch.getManagerId());

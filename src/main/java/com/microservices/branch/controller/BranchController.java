@@ -23,7 +23,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/v1/branches")
-@Tag(name = "Branches", description = "Manage restaurant branch locations, operating hours, and active status. Read operations are public; write operations require OFFICE_ADMIN role.")
+@Tag(name = "Branches", description = "Manage restaurant branch locations, operating hours, and active status. Read operations are public; write operations require HEAD_OFFICE_ADMIN role.")
 public class BranchController {
 
     @Autowired
@@ -52,11 +52,11 @@ public class BranchController {
 
     @Operation(
         summary = "Create a branch",
-        description = "Registers a new restaurant branch with its name, address, phone number, and GPS coordinates. Requires OFFICE_ADMIN role.",
+        description = "Registers a new restaurant branch with its name, address, phone number, and GPS coordinates. Requires HEAD_OFFICE_ADMIN role.",
         security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Branch created successfully"),
-        @ApiResponse(responseCode = "403", description = "Caller does not have OFFICE_ADMIN role")
+        @ApiResponse(responseCode = "403", description = "Caller does not have HEAD_OFFICE_ADMIN role")
     })
     @PostMapping
     public ResponseEntity<BranchDtos.BranchResponse> createBranch(
@@ -108,11 +108,11 @@ public class BranchController {
 
     @Operation(
         summary = "Update a branch",
-        description = "Performs a partial update on the specified branch — only fields present in the request body are changed. Requires OFFICE_ADMIN role.",
+        description = "Performs a partial update on the specified branch — only fields present in the request body are changed. Requires HEAD_OFFICE_ADMIN role.",
         security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Branch updated successfully"),
-        @ApiResponse(responseCode = "403", description = "Caller does not have OFFICE_ADMIN role"),
+        @ApiResponse(responseCode = "403", description = "Caller does not have HEAD_OFFICE_ADMIN role"),
         @ApiResponse(responseCode = "404", description = "Branch not found")
     })
     @PutMapping("/{id}")
@@ -130,11 +130,11 @@ public class BranchController {
 
     @Operation(
         summary = "Activate a branch",
-        description = "Sets the branch's active flag to true, making it available for customer orders and visible in nearby searches. Requires OFFICE_ADMIN role.",
+        description = "Sets the branch's active flag to true, making it available for customer orders and visible in nearby searches. Requires HEAD_OFFICE_ADMIN role.",
         security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Branch activated"),
-        @ApiResponse(responseCode = "403", description = "Caller does not have OFFICE_ADMIN role"),
+        @ApiResponse(responseCode = "403", description = "Caller does not have HEAD_OFFICE_ADMIN role"),
         @ApiResponse(responseCode = "404", description = "Branch not found")
     })
     @PatchMapping("/{id}/activate")
@@ -150,11 +150,11 @@ public class BranchController {
 
     @Operation(
         summary = "Deactivate a branch",
-        description = "Sets the branch's active flag to false, temporarily removing it from customer-facing searches without deleting it. Requires OFFICE_ADMIN role.",
+        description = "Sets the branch's active flag to false, temporarily removing it from customer-facing searches without deleting it. Requires HEAD_OFFICE_ADMIN role.",
         security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Branch deactivated"),
-        @ApiResponse(responseCode = "403", description = "Caller does not have OFFICE_ADMIN role"),
+        @ApiResponse(responseCode = "403", description = "Caller does not have HEAD_OFFICE_ADMIN role"),
         @ApiResponse(responseCode = "404", description = "Branch not found")
     })
     @PatchMapping("/{id}/deactivate")
@@ -186,11 +186,11 @@ public class BranchController {
 
     @Operation(
         summary = "Set branch operating hours",
-        description = "Replaces the branch's entire weekly schedule with the supplied list. Send all 7 days to define a complete schedule, or a subset to update specific days. Requires OFFICE_ADMIN role.",
+        description = "Replaces the branch's entire weekly schedule with the supplied list. Send all 7 days to define a complete schedule, or a subset to update specific days. Requires HEAD_OFFICE_ADMIN role.",
         security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Updated list of operating-hour entries"),
-        @ApiResponse(responseCode = "403", description = "Caller does not have OFFICE_ADMIN role"),
+        @ApiResponse(responseCode = "403", description = "Caller does not have HEAD_OFFICE_ADMIN role"),
         @ApiResponse(responseCode = "404", description = "Branch not found")
     })
     @PutMapping("/{id}/hours")
@@ -208,11 +208,11 @@ public class BranchController {
 
     @Operation(
         summary = "Delete a branch",
-        description = "Permanently removes the branch and all its associated operating hours from the database. Requires OFFICE_ADMIN role.",
+        description = "Permanently removes the branch and all its associated operating hours from the database. Requires HEAD_OFFICE_ADMIN role.",
         security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Branch deleted successfully"),
-        @ApiResponse(responseCode = "403", description = "Caller does not have OFFICE_ADMIN role"),
+        @ApiResponse(responseCode = "403", description = "Caller does not have HEAD_OFFICE_ADMIN role"),
         @ApiResponse(responseCode = "404", description = "Branch not found")
     })
     @DeleteMapping("/{id}")
@@ -251,7 +251,7 @@ public class BranchController {
     // ── Helper ────────────────────────────────────────────────────────────────
 
     private void assertAdmin(String userRole) {
-        if (!"HEAD_OFFICE_ADMIN".equals(userRole) && !"Admin".equals(userRole) && !"OFFICE_ADMIN".equals(userRole)) {
+        if (!"HEAD_OFFICE_ADMIN".equals(userRole)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
         }
     }

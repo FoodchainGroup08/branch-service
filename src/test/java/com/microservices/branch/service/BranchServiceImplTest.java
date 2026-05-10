@@ -129,7 +129,7 @@ class BranchServiceImplTest {
 
         BranchDtos.UpdateBranchRequest req = new BranchDtos.UpdateBranchRequest(
                 "New Name", null, null, null, null, null, null);
-        service.updateBranch("id-1", req, "admin-1", "OFFICE_ADMIN");
+        service.updateBranch("id-1", req, "admin-1", "HEAD_OFFICE_ADMIN");
 
         assertThat(b.getName()).isEqualTo("New Name");
         verify(branchRepository).save(b);
@@ -169,7 +169,7 @@ class BranchServiceImplTest {
 
         BranchDtos.UpdateBranchRequest req = new BranchDtos.UpdateBranchRequest(
                 null, null, null, null, null, 40.7128, -74.0060);
-        service.updateBranch("id-1", req, "admin-1", "OFFICE_ADMIN");
+        service.updateBranch("id-1", req, "admin-1", "HEAD_OFFICE_ADMIN");
 
         assertThat(b.getLatitude()).isEqualTo(40.7128);
         assertThat(b.getLongitude()).isEqualTo(-74.0060);
@@ -236,7 +236,7 @@ class BranchServiceImplTest {
 
         List<BranchDtos.BranchHoursRequest> req = List.of(
                 new BranchDtos.BranchHoursRequest(1, "09:00", "17:00", false));
-        List<BranchDtos.BranchHoursResponse> result = service.setHours("id-1", req, "admin-1", "OFFICE_ADMIN");
+        List<BranchDtos.BranchHoursResponse> result = service.setHours("id-1", req, "admin-1", "HEAD_OFFICE_ADMIN");
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).openTime()).isEqualTo("09:00");
@@ -254,7 +254,7 @@ class BranchServiceImplTest {
 
         List<BranchDtos.BranchHoursRequest> req = List.of(
                 new BranchDtos.BranchHoursRequest(6, null, null, true));
-        List<BranchDtos.BranchHoursResponse> result = service.setHours("id-1", req, "admin-1", "OFFICE_ADMIN");
+        List<BranchDtos.BranchHoursResponse> result = service.setHours("id-1", req, "admin-1", "HEAD_OFFICE_ADMIN");
 
         assertThat(result.get(0).closed()).isTrue();
         assertThat(result.get(0).openTime()).isNull();
@@ -268,7 +268,7 @@ class BranchServiceImplTest {
         List<BranchDtos.BranchHoursRequest> req = List.of(
                 new BranchDtos.BranchHoursRequest(0, "not-a-time", "bad", false));
 
-        assertThatThrownBy(() -> service.setHours("id-1", req, "admin-1", "OFFICE_ADMIN"))
+        assertThatThrownBy(() -> service.setHours("id-1", req, "admin-1", "HEAD_OFFICE_ADMIN"))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(400));
     }
@@ -280,7 +280,7 @@ class BranchServiceImplTest {
         Branch b = branch("id-1", true);
         when(branchRepository.findById("id-1")).thenReturn(Optional.of(b));
 
-        service.deleteBranch("id-1", "admin-1", "OFFICE_ADMIN");
+        service.deleteBranch("id-1", "admin-1", "HEAD_OFFICE_ADMIN");
 
         verify(branchRepository).delete(b);
     }
@@ -299,7 +299,7 @@ class BranchServiceImplTest {
     void deleteBranch_notFound_throws404() {
         when(branchRepository.findById("bad")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.deleteBranch("bad", "admin-1", "OFFICE_ADMIN"))
+        assertThatThrownBy(() -> service.deleteBranch("bad", "admin-1", "HEAD_OFFICE_ADMIN"))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(404));
     }
