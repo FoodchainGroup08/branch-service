@@ -22,12 +22,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Validated
 @RestController
 @RequestMapping("/v1/branches")
-@Tag(name = "Branches", description = "Manage restaurant branch locations, operating hours, and active status. Read operations are public; write operations require OFFICE_ADMIN role.")
+@Tag(name = "Branches", description = "Manage branch locations, hours, and status. Through the API gateway, only GET /branches (list) and GET /branches/nearby are anonymous; other routes require a JWT. Admin writes require HEAD_OFFICE_ADMIN / OFFICE_ADMIN.")
 public class BranchController {
 
     @Autowired
@@ -216,12 +217,12 @@ public class BranchController {
         description = "Permanently removes the branch and all its associated operating hours from the database. Requires OFFICE_ADMIN role.",
         security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Branch deleted successfully"),
+        @ApiResponse(responseCode = "200", description = "Branch deleted successfully"),
         @ApiResponse(responseCode = "403", description = "Caller does not have OFFICE_ADMIN role"),
         @ApiResponse(responseCode = "404", description = "Branch not found")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBranch(
+    public ResponseEntity<Map<String, String>> deleteBranch(
             @Parameter(description = "UUID of the branch to delete", required = true)
             @PathVariable String id,
             @Parameter(description = "Caller's user UUID — injected by the API Gateway from the JWT. When testing directly on Swagger, paste your user UUID here.", example = "00000000-0000-0000-0000-000000000001") @RequestHeader(value = "X-User-Id", required = false) String userId,
@@ -229,7 +230,9 @@ public class BranchController {
         log.info("DELETE /branches/{} userId={} role={}", id, userId, userRole);
         assertAdmin(userRole);
         branchService.deleteBranch(id, userId, userRole);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of(
+                "message", "Branch deleted successfully",
+                "id", id));
     }
 
     // ── PATCH /branches/{id}/status ───────────────────────────────────────────

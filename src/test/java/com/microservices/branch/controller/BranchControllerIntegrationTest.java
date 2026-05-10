@@ -178,13 +178,15 @@ class BranchControllerIntegrationTest {
     // ── DELETE /branches/{id} ─────────────────────────────────────────────────
 
     @Test
-    void deleteBranch_admin_returns204AndRemovesBranch() throws Exception {
+    void deleteBranch_admin_returns200WithMessageAndRemovesBranch() throws Exception {
         Branch b = persistBranch();
 
         mockMvc.perform(delete("/branches/" + b.getId())
                         .header("X-User-Id", "admin-1")
                         .header("X-User-Role", "OFFICE_ADMIN"))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Branch deleted successfully"))
+                .andExpect(jsonPath("$.id").value(b.getId()));
 
         assertThat(branchRepository.findById(b.getId())).isEmpty();
     }
