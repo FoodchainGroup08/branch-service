@@ -1,6 +1,7 @@
 package com.microservices.branch.controller;
 
 import com.microservices.branch.dto.BranchDtos;
+import com.microservices.branch.security.GatewayRoleHelper;
 import com.microservices.branch.service.BranchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -259,11 +260,11 @@ public class BranchController {
     // ── Helper ────────────────────────────────────────────────────────────────
 
     private void assertAdmin(String userRole) {
-        if (userRole == null) {
+        if (userRole == null || userRole.isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "Authentication required — add X-User-Role header (value: HEAD_OFFICE_ADMIN)");
         }
-        if (!"HEAD_OFFICE_ADMIN".equals(userRole) && !"Admin".equals(userRole) && !"OFFICE_ADMIN".equals(userRole)) {
+        if (!GatewayRoleHelper.isHeadOfficeAdminRole(userRole)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
         }
     }
