@@ -25,6 +25,8 @@ public class BranchDtos {
             Double longitude
     ) {}
 
+    public record UpdateBranchStatusRequest(boolean isActive) {}
+
     public record BranchHoursRequest(
             int dayOfWeek,
             String openTime,
@@ -39,11 +41,15 @@ public class BranchDtos {
             String phone,
             String description,
             boolean active,
+            boolean isActive,
             String managerId,
             LocalDateTime createdAt,
             Double latitude,
             Double longitude,
-            List<BranchHoursResponse> hours
+            List<BranchHoursResponse> hours,
+            String hoursDisplay,
+            Double rating,
+            boolean isOpen
     ) {}
 
     public record BranchSummary(
@@ -51,9 +57,13 @@ public class BranchDtos {
             String name,
             String address,
             boolean active,
+            boolean isActive,
             String managerId,
             Double latitude,
-            Double longitude
+            Double longitude,
+            Double rating,
+            boolean isOpen,
+            String hoursDisplay
     ) {}
 
     public record BranchHoursResponse(
@@ -71,8 +81,13 @@ public class BranchDtos {
             String address,
             String phone,
             boolean active,
+            boolean isActive,
             Double latitude,
             Double longitude,
-            double distanceKm
+            double distanceKm,
+            String distance,
+            Double rating,
+            boolean isOpen,
+            String hoursDisplay
     ) {}
 }

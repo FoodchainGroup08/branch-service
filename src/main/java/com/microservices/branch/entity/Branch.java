@@ -53,6 +53,10 @@ public class Branch {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "rating")
+    @Builder.Default
+    private Double rating = 0.0;
+
     @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     @ToString.Exclude

@@ -22,7 +22,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/branch")
+@RequestMapping("/v1/branches")
 @Tag(name = "Branches", description = "Manage restaurant branch locations, operating hours, and active status. Read operations are public; write operations require OFFICE_ADMIN role.")
 public class BranchController {
 
@@ -227,11 +227,32 @@ public class BranchController {
         return ResponseEntity.noContent().build();
     }
 
+    // ── PATCH /branches/{id}/status ───────────────────────────────────────────
+
+    @Operation(
+        summary = "Set branch active status",
+        description = "Updates the active status of the specified branch using the isActive field in the request body. Requires admin role.",
+        security = @SecurityRequirement(name = "Bearer Authentication"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Branch status updated"),
+        @ApiResponse(responseCode = "403", description = "Caller does not have admin role"),
+        @ApiResponse(responseCode = "404", description = "Branch not found")
+    })
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<BranchDtos.BranchResponse> updateStatus(
+            @Parameter(description = "UUID of the branch", required = true)
+            @PathVariable String id,
+            @RequestBody BranchDtos.UpdateBranchStatusRequest request,
+            @Parameter(hidden = true) @RequestHeader("X-User-Role") String userRole) {
+        assertAdmin(userRole);
+        return ResponseEntity.ok(branchService.setActive(id, request.isActive()));
+    }
+
     // ── Helper ────────────────────────────────────────────────────────────────
 
     private void assertAdmin(String userRole) {
-        if (!"OFFICE_ADMIN".equals(userRole)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only OFFICE_ADMIN can perform this action");
+        if (!"HEAD_OFFICE_ADMIN".equals(userRole) && !"Admin".equals(userRole) && !"OFFICE_ADMIN".equals(userRole)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
         }
     }
 }

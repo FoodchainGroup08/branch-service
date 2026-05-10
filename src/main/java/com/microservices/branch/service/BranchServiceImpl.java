@@ -158,9 +158,14 @@ public class BranchServiceImpl implements BranchService {
                 .stream()
                 .map(b -> {
                     double dist = haversineKm(lat, lng, b.getLatitude(), b.getLongitude());
+                    double rating = b.getRating() != null ? b.getRating() : 0.0;
+                    String distFormatted = String.format("%.1f km", dist);
                     return new BranchDtos.NearbyBranchResponse(
-                            b.getId(), b.getName(), b.getAddress(), b.getPhone(), b.isActive(),
-                            b.getLatitude(), b.getLongitude(), dist);
+                            b.getId(), b.getName(), b.getAddress(), b.getPhone(),
+                            b.isActive(), b.isActive(),
+                            b.getLatitude(), b.getLongitude(),
+                            dist, distFormatted,
+                            rating, computeIsOpen(b), computeHoursDisplay(b));
                 })
                 .filter(r -> r.distanceKm() <= radiusKm)
                 .sorted(Comparator.comparingDouble(BranchDtos.NearbyBranchResponse::distanceKm))
@@ -187,16 +192,20 @@ public class BranchServiceImpl implements BranchService {
     private BranchDtos.BranchResponse toResponse(Branch b) {
         List<BranchDtos.BranchHoursResponse> hours = b.getHours() == null ? List.of()
                 : b.getHours().stream().map(this::toHoursResponse).collect(Collectors.toList());
+        double rating = b.getRating() != null ? b.getRating() : 0.0;
         return new BranchDtos.BranchResponse(
                 b.getId(), b.getName(), b.getAddress(), b.getPhone(),
-                b.getDescription(), b.isActive(), b.getManagerId(), b.getCreatedAt(),
-                b.getLatitude(), b.getLongitude(), hours);
+                b.getDescription(), b.isActive(), b.isActive(), b.getManagerId(), b.getCreatedAt(),
+                b.getLatitude(), b.getLongitude(), hours,
+                computeHoursDisplay(b), rating, computeIsOpen(b));
     }
 
     private BranchDtos.BranchSummary toSummary(Branch b) {
+        double rating = b.getRating() != null ? b.getRating() : 0.0;
         return new BranchDtos.BranchSummary(
-                b.getId(), b.getName(), b.getAddress(), b.isActive(),
-                b.getManagerId(), b.getLatitude(), b.getLongitude());
+                b.getId(), b.getName(), b.getAddress(), b.isActive(), b.isActive(),
+                b.getManagerId(), b.getLatitude(), b.getLongitude(),
+                rating, computeIsOpen(b), computeHoursDisplay(b));
     }
 
     private BranchDtos.BranchHoursResponse toHoursResponse(BranchHours h) {
@@ -217,5 +226,40 @@ public class BranchServiceImpl implements BranchService {
                  + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
                  * Math.sin(dLon / 2) * Math.sin(dLon / 2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    // BranchHours.dayOfWeek: 0 = Monday … 6 = Sunday
+    // java.time.DayOfWeek:   MONDAY=1 … SUNDAY=7  →  getValue() % 7 gives 1..6,0
+    // To map MONDAY→0 … SUNDAY→6: (getValue() - 1)
+    private int todayDayOfWeek() {
+        return java.time.LocalDate.now().getDayOfWeek().getValue() - 1;
+    }
+
+    private boolean computeIsOpen(Branch branch) {
+        List<BranchHours> hoursList = branch.getHours();
+        if (hoursList == null || hoursList.isEmpty()) return false;
+        int dayOfWeek = todayDayOfWeek();
+        java.time.LocalTime now = java.time.LocalTime.now();
+        return hoursList.stream()
+                .filter(h -> !h.isClosed() && h.getDayOfWeek() == dayOfWeek)
+                .anyMatch(h -> h.getOpenTime() != null && h.getCloseTime() != null
+                        && !now.isBefore(h.getOpenTime()) && !now.isAfter(h.getCloseTime()));
+    }
+
+    private String computeHoursDisplay(Branch branch) {
+        List<BranchHours> hoursList = branch.getHours();
+        if (hoursList == null || hoursList.isEmpty()) return "Hours not set";
+        int dayOfWeek = todayDayOfWeek();
+        return hoursList.stream()
+                .filter(h -> h.getDayOfWeek() == dayOfWeek)
+                .findFirst()
+                .map(h -> h.isClosed() ? "Closed today"
+                        : formatTime(h.getOpenTime()) + " - " + formatTime(h.getCloseTime()))
+                .orElse("Hours not available");
+    }
+
+    private String formatTime(java.time.LocalTime t) {
+        if (t == null) return "";
+        return t.format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"));
     }
 }
